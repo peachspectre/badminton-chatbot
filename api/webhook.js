@@ -155,8 +155,8 @@ app.post('/api/webhook', verifySignature, line.middleware(config), (req, res) =>
   Promise.all(req.body.events.map(handleEvent))
     .then(() => res.status(200).end())
     .catch((err) => {
-      console.error(err);
-      res.status(500).end();
+      console.error('Error processing event:', err);
+      res.status(500).end();  // ส่งสถานะ 500 หากเกิดข้อผิดพลาด
     });
 });
 
