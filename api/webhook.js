@@ -19,15 +19,6 @@ const client = new line.Client(config);
 // เก็บสถานะของผู้ใช้
 const userStates = {};
 
-// แผนที่ชื่อผู้เล่น
-const playerMap = {
-  P1: 'พี่อุ๊',
-  P2: 'พี่ออม',
-  P3: 'พี่คิง',
-  P4: 'เจน',
-  P5: 'เทพแห่งแบดกฤษ',
-};
-
 // ฟังก์ชันตรวจสอบลายเซ็นต์
 function verifySignature(req) {
   const signature = req.headers['x-line-signature'];
@@ -152,8 +143,11 @@ function verifySignature(req) {
 
 // ใช้ middleware ตรวจสอบลายเซ็นต์
 app.post('/api/webhook', verifySignature, line.middleware(config), (req, res) => {
+  // ส่ง 200 OK ทันที เพื่อให้ LINE API ทราบว่าได้รับคำขอแล้ว
+  res.status(200).end();
+
+  // ประมวลผลคำขอในพื้นหลัง
   Promise.all(req.body.events.map(handleEvent))
-    .then(() => res.status(200).end())
     .catch((err) => {
       console.error('Error processing event:', err);
       res.status(500).end();  // ส่งสถานะ 500 หากเกิดข้อผิดพลาด
