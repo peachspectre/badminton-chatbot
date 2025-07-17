@@ -132,7 +132,7 @@ async function handleEvent(event) {
 
     return client.replyMessage(event.replyToken, {
       type: 'text',
-      text: `ขออภัยค่ะ กรุณากรอกข้อมูลในรูปแบบที่น้องแบดตี้เข้าใจ เช่น A2=2`,
+      text: `ขออภัยค่ะ กรุณากรอกข้อมูลในรูปแบบที่น้องแบดตี้เข้าใจ เช่น A2=2 หรือ A5=P1,P2,P3`,
     });
   }
 }
