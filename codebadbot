@@ -1,15 +1,9 @@
-const express = require('express');
 const line = require('@line/bot-sdk');
-const ngrok = require('ngrok');  // ใช้ ngrok ที่ติดตั้งจาก npm
-
-// สร้างแอป Express
-const app = express();
-app.use(express.json());
+const crypto = require('crypto');
 
 // LINE Channel Credentials
 const CHANNEL_ACCESS_TOKEN = 'VDP6BNxp4IbJjVLe3MY73lghZwvqKeisykkmCxPLhhUV5xS5QFwt2fkIEWT6lvCOqX4P8Gusw4C+lrJrJEdMrrdYBQ3YJAQSm+hPyKVdiC97X9t7h9fOOhoyAHUbdhJYbaJnMsjyosvbxtQPFmmnTAdB04t89/1O/w1cDnyilFU=';
 const CHANNEL_SECRET = 'b16b91dca7e1899f0f0945cad9bd8cae';
-const GROUP_ID = 'Cc4b0c3a420fc92265e01e1236d666969'; // ไลน์กลุ่มเป้าหมาย
 
 // ตั้งค่า client ของ LINE
 const config = {
@@ -32,35 +26,20 @@ const playerMap = {
 };
 
 // ฟังก์ชันตรวจสอบลายเซ็นต์
-function verifySignature(req, res, next) {
+function verifySignature(req) {
   const signature = req.headers['x-line-signature'];
   const body = JSON.stringify(req.body);
-  
-  const hash = require('crypto')
+
+  const hash = crypto
     .createHmac('sha256', CHANNEL_SECRET)
     .update(body)
     .digest('base64');
 
-  if (signature !== hash) {
-    return res.status(400).send('Signature mismatch');
-  }
-  next();
+  return signature === hash;
 }
-
-// ใช้ middleware ตรวจสอบลายเซ็นต์
-app.post('/webhook', verifySignature, line.middleware(config), (req, res) => {
-  Promise.all(req.body.events.map(handleEvent))
-    .then(() => res.status(200).end())
-    .catch((err) => {
-      console.error(err);
-      res.status(500).end();
-    });
-});
 
 // ฟังก์ชันจัดการ Event ที่มาจาก LINE
 async function handleEvent(event) {
-  console.log('📥 ได้รับ Event:', event);
-
   if (event.type !== 'message' || event.message.type !== 'text') return;
 
   // ถ้าเป็นข้อความ "น้องแบดตี้สรุปค่าตีแบดให้หน่อยจ้า"
@@ -152,23 +131,23 @@ async function handleEvent(event) {
   }
 }
 
-// เส้นทาง GET สำหรับทดสอบว่าแอปทำงาน
-app.get('/', (req, res) => {
-  res.send('น้องแบดตี้พร้อมรับใช้ค่า 💪🏸');
-});
-
-// เริ่มต้นเซิร์ฟเวอร์
-const port = process.env.PORT || 3000;
-app.listen(port, () => {
-  console.log(`Server running at http://localhost:${port}`);
-});
-
-// ใช้ Ngrok เพื่อเปิด URL ให้เป็น HTTPS
-(async function() {
-  try {
-    const url = await ngrok.connect(port); // เปิด Ngrok สำหรับพอร์ต 3000
-    console.log(`Public URL: ${url}`);
-  } catch (err) {
-    console.error("เกิดข้อผิดพลาดในการเชื่อมต่อกับ Ngrok:", err);
+// ฟังก์ชันที่จัดการคำขอ POST ของ Webhook
+module.exports = async (req, res) => {
+  if (req.method !== 'POST') {
+    return res.status(405).send('Method Not Allowed');
   }
-})();
+
+  if (!verifySignature(req)) {
+    return res.status(400).send('Signature mismatch');
+  }
+
+  try {
+    const events = req.body.events;
+    await Promise.all(events.map(handleEvent));
+
+    return res.status(200).send('OK');
+  } catch (err) {
+    console.error(err);
+    return res.status(500).send('Internal Server Error');
+  }
+};
