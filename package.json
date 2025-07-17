@@ -9,6 +9,6 @@
     "start": "node api/webhook.js"
   },
   "engines": {
-    "node": "18.x"
+    "node": "22.x"
   }
 }
