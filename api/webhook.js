@@ -1,11 +1,14 @@
+const express = require('express');
 const line = require('@line/bot-sdk');
 const crypto = require('crypto');
+
+const app = express();
+app.use(express.json());
 
 // LINE Channel Credentials
 const CHANNEL_ACCESS_TOKEN = 'VDP6BNxp4IbJjVLe3MY73lghZwvqKeisykkmCxPLhhUV5xS5QFwt2fkIEWT6lvCOqX4P8Gusw4C+lrJrJEdMrrdYBQ3YJAQSm+hPyKVdiC97X9t7h9fOOhoyAHUbdhJYbaJnMsjyosvbxtQPFmmnTAdB04t89/1O/w1cDnyilFU=';
 const CHANNEL_SECRET = 'b16b91dca7e1899f0f0945cad9bd8cae';
 
-// ตั้งค่า client ของ LINE
 const config = {
   channelAccessToken: CHANNEL_ACCESS_TOKEN,
   channelSecret: CHANNEL_SECRET,
@@ -13,7 +16,7 @@ const config = {
 
 const client = new line.Client(config);
 
-// เก็บสถานะของผู้ใช้ (user states)
+// เก็บสถานะของผู้ใช้
 const userStates = {};
 
 // แผนที่ชื่อผู้เล่น
@@ -47,9 +50,14 @@ async function handleEvent(event) {
     userStates[event.source.userId] = { step: 'A1', data: {} };
     return client.replyMessage(event.replyToken, {
       type: 'text',
-      text: `ยินดีค่าท่านเทพแบดกฤษ น้องแบดตี้จะสรุปค่าใช้จ่ายให้นะคะ\n` +
-            `แต่ก่อนอื่น รบกวนท่านเทพแบดกฤษ กรอกข้อมูลให้น้องแบดตี้หน่อยนะคะ\n\n` +
-            `A1=วันที่ตีแบดค่ะ`,
+      text: `🎉 ยินดีค่าท่านเทพแบดกฤษ 🏸\n\n` +
+            `น้องแบดตี้จะสรุปค่าใช้จ่ายให้นะคะ\n` +
+            `แต่ก่อนอื่น รบกวนท่านเทพแบดกฤษกรอกข้อมูลให้ครบหน่อยนะคะ 😊\n\n` +
+            `A1=วันที่ตีแบดค่ะ (ตัวอย่าง: 14/07/2568)\n` +
+            `A2=จำนวนชั่วโมงที่เล่นแบดค่ะ (ตัวอย่าง: 2)\n` +
+            `A3=ค่าจองคอตรอบนี้เท่าไรคะ (ตัวอย่าง: 50)\n` +
+            `A4=ใช้ลูกแบดไปกี่ลูกคะ (ตัวอย่าง: 2)\n` +
+            `A5=จำนวนผู้เล่นในรอบนี้มีใครบ้างคะ (เช่น P1,P2,P3)`,
     });
   }
 
@@ -63,7 +71,7 @@ async function handleEvent(event) {
       state.step = 'A2';
       return client.replyMessage(event.replyToken, {
         type: 'text',
-        text: `A2=จำนวนชั่วโมงที่เล่นแบดค่ะ`,
+        text: `✅ ขอบคุณสำหรับข้อมูล A1! กรุณากรอก A2 (จำนวนชั่วโมงที่เล่นแบดค่ะ)`,
       });
     }
 
@@ -72,7 +80,7 @@ async function handleEvent(event) {
       state.step = 'A3';
       return client.replyMessage(event.replyToken, {
         type: 'text',
-        text: `A3=ค่าจองคอตรอบนี้เท่าไรคะ`,
+        text: `✅ ขอบคุณสำหรับข้อมูล A2! กรุณากรอก A3 (ค่าจองคอตรอบนี้เท่าไรคะ)`,
       });
     }
 
@@ -81,7 +89,7 @@ async function handleEvent(event) {
       state.step = 'A4';
       return client.replyMessage(event.replyToken, {
         type: 'text',
-        text: `A4=ใช้ลูกแบดไปกี่ลูกคะ`,
+        text: `✅ ขอบคุณสำหรับข้อมูล A3! กรุณากรอก A4 (ใช้ลูกแบดไปกี่ลูกคะ)`,
       });
     }
 
@@ -90,9 +98,7 @@ async function handleEvent(event) {
       state.step = 'A5';
       return client.replyMessage(event.replyToken, {
         type: 'text',
-        text: `A5=จำนวนผู้เล่นในรอบนี้มีใครบ้างคะ\n` +
-              `P1=พี่อุ๊ P2=พี่ออม P3=พี่คิง P4=เจน P5=เทพแห่งแบดกฤษ\n\n` +
-              `เช่น A5=P1,P2,P3`,
+        text: `✅ ขอบคุณสำหรับข้อมูล A4! กรุณากรอก A5 (จำนวนผู้เล่นในรอบนี้มีใครบ้างคะ)`,
       });
     }
 
@@ -108,16 +114,16 @@ async function handleEvent(event) {
 
       let playerLines = players.map(p => {
         const name = playerMap[p] || p;
-        return `${name} จ่าย ${perPerson} บาท`;
+        return `${name} จ่าย ${perPerson} บาท 💰`;
       }).join('\n');
 
-      const summary = `ว้าวว!! สุดยอดเลยค่ะ ขอบคุณสำหรับการมาออกกำลังกายนะคะ\n` +
-                      `สำหรับค่าใช้จ่ายในการตีแบดครั้งนี้ ${total} บาทค่ะ\n` +
-                      `${playerLines}\n\nสามารถโอนเงินได้ที่ พร้อมเพย์ 0826721217 ได้เลยค่าาา`;
+      const summary = `🎉 ว้าวว!! สุดยอดเลยค่ะ ขอบคุณสำหรับการมาออกกำลังกายนะคะ 🏸\n` +
+                      `สำหรับค่าใช้จ่ายในการตีแบดครั้งนี้ ${total} บาทค่ะ 💸\n` +
+                      `${playerLines}\n\n` +
+                      `สามารถโอนเงินได้ที่ พร้อมเพย์ 0826721217 ได้เลยค่าาา 😄`;
 
       delete userStates[event.source.userId];
 
-      // ตอบกลับข้อความใน LINE
       return client.replyMessage(event.replyToken, {
         type: 'text',
         text: summary,
@@ -126,28 +132,36 @@ async function handleEvent(event) {
 
     return client.replyMessage(event.replyToken, {
       type: 'text',
-      text: `ขออภัยค่ะ กรุณากรอกในรูปแบบที่น้องแบดตี้เข้าใจ เช่น A2=2`,
+      text: `ขออภัยค่ะ กรุณากรอกข้อมูลในรูปแบบที่น้องแบดตี้เข้าใจ เช่น A2=2`,
     });
   }
 }
 
-// ฟังก์ชันที่จัดการคำขอ POST ของ Webhook
-module.exports = async (req, res) => {
-  if (req.method !== 'POST') {
-    return res.status(405).send('Method Not Allowed');
-  }
+// ฟังก์ชันตรวจสอบลายเซ็นต์
+function verifySignature(req) {
+  const signature = req.headers['x-line-signature'];
+  const body = JSON.stringify(req.body);
 
-  if (!verifySignature(req)) {
-    return res.status(400).send('Signature mismatch');
-  }
+  const hash = crypto
+    .createHmac('sha256', CHANNEL_SECRET)
+    .update(body)
+    .digest('base64');
 
-  try {
-    const events = req.body.events;
-    await Promise.all(events.map(handleEvent));
+  return signature === hash;
+}
 
-    return res.status(200).send('OK');
-  } catch (err) {
-    console.error(err);
-    return res.status(500).send('Internal Server Error');
-  }
-};
+// ใช้ middleware ตรวจสอบลายเซ็นต์
+app.post('/api/webhook', verifySignature, line.middleware(config), (req, res) => {
+  Promise.all(req.body.events.map(handleEvent))
+    .then(() => res.status(200).end())
+    .catch((err) => {
+      console.error(err);
+      res.status(500).end();
+    });
+});
+
+// เริ่มต้นเซิร์ฟเวอร์
+const port = process.env.PORT || 3000;
+app.listen(port, () => {
+  console.log(`Server running at http://localhost:${port}`);
+});
